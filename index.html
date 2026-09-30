@@ -205,6 +205,35 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
   .memo{border:1px dashed #999;min-height:50px}
 }
 
+/* ---- 모바일 화면 맞춤 ---- */
+@media (max-width:640px){
+  header.top{margin-bottom:10px;gap:6px}
+  .brand h1{font-size:1.08rem}
+  .brand small{font-size:.72rem}
+  #navBtns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;width:100%}
+  body.onmenu #navBtns{display:none}
+  #navBtns .btn{padding:7px 2px;font-size:.76rem;line-height:1.2;white-space:normal;word-break:keep-all;min-height:38px}
+  .qtext{font-size:1rem;line-height:1.5;margin:0 0 8px}
+  .opts{gap:6px}
+  .opt{padding:8px 10px;gap:8px;border-radius:7px}
+  .opt .mk{width:24px;height:24px;font-size:.76rem}
+  .qimg{display:block;padding:4px;margin:4px 0 8px;text-align:center}
+  .qimg img{max-height:22vh;margin:0 auto}
+  .qtext,.opt{word-break:keep-all;overflow-wrap:anywhere}
+  .opt{font-size:.95rem;line-height:1.4}
+  .guessrow{gap:6px;margin:0 0 8px}
+  .guessbtn{padding:3px 10px;font-size:.78rem}
+  .guessrow .small{display:none}
+  .panel{padding:14px}
+  .qimg.full img{max-height:62vh;width:100%}
+  .omr h3{font-size:.88rem}
+  .omrsub{font-size:.68rem;margin:6px 0 2px}
+  .grid{grid-template-columns:repeat(10,minmax(0,1fr));gap:2px}
+  .cell{font-size:.58rem;padding:1px 0;border-radius:3px;line-height:1.1}
+  .cell i{font-size:.56rem}
+  .cell.g::after{top:-4px;right:-3px;font-size:.5rem;padding:0 2px}
+}
+
 .ovl{text-decoration:overline}
 .maker{text-align:right;font-size:.72rem;color:var(--muted);opacity:.7;margin-top:28px;letter-spacing:.04em}
 /* 첫 화면 */
@@ -807,7 +836,7 @@ function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createE
   const G=window.CBT_G=GRADES[g];
   setHead(G.name+' 기출 CBT', G.sub); document.title=G.name+' 기출 CBT';
   document.getElementById('app').innerHTML='<section class="panel"><p>문제 불러오는 중…</p></section>';
-  loadScript('data'+g+'.js?v=2').then(()=>loadScript('app.js?v=2')).catch(()=>{
+  loadScript('data'+g+'.js?v=4').then(()=>loadScript('app.js?v=4')).catch(()=>{
     document.getElementById('app').innerHTML='<section class="panel"><p>문제를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 해 주세요.</p><button class="btn" onclick="location.reload()">새로고침</button></section>';
   });
 })();

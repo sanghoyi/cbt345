@@ -201,7 +201,7 @@ function qBody(q, numLabel){
   let h='';
   if(!stemHidden) h+=`<p class="qtext"><span class="no">${numLabel}</span>${fmt(q.q)}</p>`;
   else h+=`<p class="qtext"><span class="no">${numLabel}</span><span class="small">아래 문제지 이미지를 보고 답을 고르세요.</span></p>`;
-  q.img.forEach(src=>{ h+=`<div class="qimg"><img src="${src}" alt="문제 그림"></div>`; });
+  q.img.forEach(src=>{ h+=`<div class="qimg${q.full?' full':''}"><img src="${src}" alt="문제 그림"></div>`; });
   return h;
 }
 function renderQ(){
