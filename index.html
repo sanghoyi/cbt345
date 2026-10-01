@@ -155,6 +155,8 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .st-acc{stroke:var(--omr)} .st-bad{stroke:var(--bad)} .t-acc{fill:var(--omr)} .t-bad{fill:var(--bad)} .t-inv{fill:var(--paper)}
 .exbtn{margin-top:14px}
 .guessbtn{border:1.5px dashed var(--line);background:var(--paper);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.9rem;color:var(--muted)}
+.skipbtn{border:1.5px dashed var(--line);background:var(--paper);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.9rem;color:var(--bad);margin-left:auto}
+.skipbtn[aria-pressed="true"]{border-style:solid;border-color:var(--bad);background:var(--bad-soft)}
 .guessbtn[aria-pressed="true"]{border-style:solid;border-color:#b7791f;background:#fdf3dc;color:#8a5a00}
 :root[data-theme="dark"] .guessbtn[aria-pressed="true"]{background:#3a2e12;color:#f2c14e;border-color:#f2c14e}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .guessbtn[aria-pressed="true"]{background:#3a2e12;color:#f2c14e;border-color:#f2c14e}}

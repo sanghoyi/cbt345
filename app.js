@@ -178,7 +178,7 @@ function shuffleArr(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.
 function startExam(list, title, mode, shuffle, isRetry){
   if(!list.length) return;
   if(shuffle) list = shuffleArr(list);
-  ex = { list, title, mode, isRetry:!!isRetry, kind:(isRetry===true?'wrong':(isRetry||null)), ans:{}, guess:{}, gAdded:{}, cur:0, done:false, checked:{},
+  ex = { list, title, mode, isRetry:!!isRetry, kind:(isRetry===true?'wrong':(isRetry||null)), ans:{}, guess:{}, gAdded:{}, skip:{}, cur:0, done:false, checked:{},
          end: mode==='exam' ? Date.now()+list.length*60*1000 : null };
   clearInterval(tick);
   if(ex.end) tick=setInterval(updTimer,1000);
@@ -214,7 +214,7 @@ function renderQ(){
     return `<button class="${c}" data-i="${i}"><span class="mk">${MK[i]}</span><span>${optText(q,i)}</span></button>`;
   }).join('');
   let fb='';
-  if(showAns){ fb = a===q.a ? `<div class="feedback ok">정답입니다.</div>` : `<div class="feedback no">${a==null?'미응답':'오답'} · 정답은 ${MKC[q.a]} 입니다.</div>`; }
+  if(showAns){ fb = a===q.a ? `<div class="feedback ok">정답입니다.</div>` : `<div class="feedback no">${a==null?(ex.skip[q.id]?'모름':'미응답'):'오답'} · 정답은 ${MKC[q.a]} 입니다.</div>`; }
   app.innerHTML = `
   <div class="exam">
     <section class="panel">
@@ -223,7 +223,7 @@ function renderQ(){
         ${ex.end && !ex.done ? `<span class="timer" id="timer"></span>` : `<span class="small">${esc(ex.title)}</span>`}
       </div>
       ${qBody(q, (ex.cur+1)+'.')}
-      <div class="guessrow">${ex.done ? (ex.guess[q.id]?'<span class="gtag">찍은 문제로 표시됨</span>':'') : `<button class="guessbtn" id="gbtn" aria-pressed="${!!ex.guess[q.id]}">${ex.guess[q.id]?'찍었음 ✓':'찍었음 (확신 없음)'}</button><span class="small">확신이 없으면 눌러 두세요</span>`}</div>
+      <div class="guessrow">${ex.done ? (ex.guess[q.id]?'<span class="gtag">찍은 문제로 표시됨</span>':'') : `<button class="guessbtn" id="gbtn" aria-pressed="${!!ex.guess[q.id]}">${ex.guess[q.id]?'찍었음 ✓':'찍었음 (확신 없음)'}</button><span class="small">확신이 없으면 눌러 두세요</span>`}${(!ex.done && !showAns)?`<button class="skipbtn" id="sbtn" aria-pressed="${!!ex.skip[q.id]}">${ex.skip[q.id]?'모름 ✓':'전혀 모르겠음'}</button>`:''}</div>
       <div class="opts">${opts}</div>
       ${fb}
       ${showAns ? explHTML(q) : ''}
@@ -254,6 +254,11 @@ function renderQ(){
   const on=(id,f)=>{const e=document.getElementById(id); if(e) e.onclick=f;};
   on('gbtn',()=>{ ex.guess[q.id]=!ex.guess[q.id]; if(!ex.guess[q.id]) delete ex.guess[q.id];
     if(ex.mode==='practice' && ex.checked[q.id]) { applyGuess(q); save(); } renderQ(); });
+  on('sbtn',()=>{
+    if(ex.done || ex.checked[q.id]) return;
+    if(ex.mode==='practice'){ delete ex.ans[q.id]; ex.skip[q.id]=true; ex.checked[q.id]=true; recordOne(q); renderQ(); }
+    else { delete ex.ans[q.id]; ex.skip[q.id]=!ex.skip[q.id]; if(ex.skip[q.id] && ex.cur<ex.list.length-1) ex.cur++; renderQ(); }
+  });
   on('prev',()=>{ex.cur--;renderQ();});
   on('next',()=>{ex.cur++;renderQ();});
   on('submit',askSubmit); on('submit2',askSubmit);
@@ -268,10 +273,10 @@ function omrGrid(){
     if(key!==lastKey){ flush(); h+=`<div class="omrsub">${esc(key)}</div>`; lastKey=key; }
     const a=ex.ans[q.id]; let c='cell';
     const show = ex.done || (ex.mode==='practice'&&ex.checked[q.id]);
-    if(show) c+= a===q.a ? ' r' : ' w'; else if(a!=null) c+=' done';
+    if(show) c+= a===q.a ? ' r' : ' w'; else if(a!=null) c+=' done'; else if(ex.skip[q.id]) c+=' done';
     if(k===ex.cur) c+=' cur';
     if(ex.guess[q.id]) c+=' g';
-    buf.push(`<button class="${c}" data-k="${k}" aria-label="${k+1}번">${k+1}<i>${a!=null?MK[a]:''}</i></button>`);
+    buf.push(`<button class="${c}" data-k="${k}" aria-label="${k+1}번">${k+1}<i>${a!=null?MK[a]:(ex.skip[q.id]?'모':'')}</i></button>`);
   });
   flush();
   return h;
