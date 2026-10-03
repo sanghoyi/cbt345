@@ -1,6 +1,6 @@
 const G = window.CBT_G;
 const DATA = window.CBT_DATA;
-const SUBS = ['기관1','기관2','기관3','직무일반','영어'];
+const SUBS = (G.subs || ['기관1','기관2','기관3','직무일반','영어']);
 const MK = ['가','나','사','아'];
 const MKC = ['㉮','㉯','㉴','㉵'];
 const LS = G.ls;
@@ -48,7 +48,7 @@ function progText(){
     const i=sessInfo(y,s);
     if(i.state==='none'){ L.push(`${y}년 제${s}회: 안 풀었음`); return; }
     const det=SUBS.map(sub=>{ const p=store.prog[`${y}-${s}-${sub}`]; return p?`${sub} ${p.last}`:`${sub} -`; }).join(', ');
-    L.push(`${y}년 제${s}회: ${i.state==='part'?`${i.n}/5과목 풀이`:(i.state==='ok'?'합격선':'불합격선')} 평균 ${i.avg}점, ${i.cnt}회 풀이 (${det})`);
+    L.push(`${y}년 제${s}회: ${i.state==='part'?`${i.n}/${SUBS.length}과목 풀이`:(i.state==='ok'?'합격선':'불합격선')} 평균 ${i.avg}점, ${i.cnt}회 풀이 (${det})`);
   }); });
   L.push(`오답노트 ${Object.keys(store.wrong).length}개, 찍은 문제 ${Object.keys(store.guess).length}개`);
   return L.join('\n');
@@ -82,7 +82,7 @@ function home(){
       <div class="field"><div class="label">연도</div><div class="chips" id="cY">
         ${years.map(y=>{ const d=sessionsOf(y).filter(s=>sessInfo(y,s).state!=='none').length; return `<button class="chip" aria-pressed="${y===sel.y}" data-y="${y}">${y}년${d?`<span class="cb">${d}/${sessionsOf(y).length}</span>`:''}</button>`; }).join('')}</div></div>
       <div class="field"><div class="label">회차 (여러 개 선택 가능)</div><div class="chips" id="cS">
-        ${ss.map(s=>{ const i=sessInfo(sel.y,s); const b=i.state==='none'?'':(i.state==='part'?`${i.n}/5`:`${i.avg}점`); return `<button class="chip" aria-pressed="${sel.s.has(s)}" data-s="${s}">제${s}회${b?`<span class="cb">✓ ${b}</span>`:''}</button>`; }).join('')}
+        ${ss.map(s=>{ const i=sessInfo(sel.y,s); const b=i.state==='none'?'':(i.state==='part'?`${i.n}/${SUBS.length}`:`${i.avg}점`); return `<button class="chip" aria-pressed="${sel.s.has(s)}" data-s="${s}">제${s}회${b?`<span class="cb">✓ ${b}</span>`:''}</button>`; }).join('')}
         <button class="chip" data-s="all">전체</button></div></div>
       <div class="field"><div class="label">과목</div><div class="chips" id="cSub">
         ${SUBS.map(s=>`<button class="chip" aria-pressed="${sel.sub.has(s)}" data-sub="${s}">${s}</button>`).join('')}
@@ -116,7 +116,7 @@ function home(){
       <table class="prog"><tr><th></th>${[1,2,3,4].map(s=>`<th>제${s}회</th>`).join('')}</tr>
       ${years.map(y=>`<tr><th class="y">${y}</th>${[1,2,3,4].map(s=>{ if(!sessionsOf(y).includes(s)) return '<td></td>'; const i=sessInfo(y,s);
         const tip=SUBS.map(sub=>{ const p=store.prog[`${y}-${s}-${sub}`]; return `${sub}: ${p?p.last+'점 ('+p.c+'회)':'안 풀었음'}`; }).join('\n');
-        return `<td><div class="pc ${i.state}" data-py="${y}" data-ps="${s}" title="${esc(tip)}">${i.state==='none'?'<b>–</b><small>안 풀었음</small>':`<b>${i.avg}</b><small>${i.state==='part'?i.n+'/5과목':i.cnt+'회 풀이'}</small>`}</div></td>`; }).join('')}</tr>`).join('')}
+        return `<td><div class="pc ${i.state}" data-py="${y}" data-ps="${s}" title="${esc(tip)}">${i.state==='none'?'<b>–</b><small>안 풀었음</small>':`<b>${i.avg}</b><small>${i.state==='part'?i.n+'/'+SUBS.length+'과목':i.cnt+'회 풀이'}</small>`}</div></td>`; }).join('')}</tr>`).join('')}
       </table>
       <div class="legend"><span><i style="background:var(--ok-soft);border-color:var(--ok)"></i>합격선</span><span><i style="background:var(--bad-soft);border-color:var(--bad)"></i>불합격선</span><span><i style="background:var(--omr-soft);border-color:var(--omr)"></i>일부 과목만</span><span><i style="border-color:var(--line);border-style:dashed"></i>안 풀었음</span></div>
       <div class="bk"><button class="btn" id="pcopy">학습 기록 글로 복사</button><button class="btn" id="bsave">백업 파일 저장</button><button class="btn" id="bload">백업 불러오기</button><input type="file" id="bfile" accept=".json,application/json" hidden></div>
@@ -157,7 +157,7 @@ function home(){
   document.getElementById('shuf').onclick=()=>{ sel.shuffle=!sel.shuffle; home(); };
   document.getElementById('start').onclick=()=>{
     const list = pool();
-    const title = `${sel.y} 제${[...sel.s].sort().join('·')}회 ${sel.sub.size===5?'전과목':[...sel.sub].join('·')}`;
+    const title = `${sel.y} 제${[...sel.s].sort().join('·')}회 ${sel.sub.size===SUBS.length?'전과목':[...sel.sub].join('·')}`;
     startExam(list, title, sel.mode, sel.shuffle);
   };
   document.getElementById('retry').onclick=()=>{
