@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<title>어선 기관 3·4·5·6급 CBT</title>
+<title>어선 기관 1~6급 CBT</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
@@ -243,7 +243,7 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .hero{margin:6px 0 20px}
 .hero h2{font-size:1.5rem;line-height:1.35;margin:0 0 6px;color:var(--navy);letter-spacing:-.01em}
 .hero p{margin:0;color:var(--muted)}
-.gradegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.gradegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .grade{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:var(--paper);border:1px solid var(--line);border-top:6px solid var(--gc);border-radius:10px;padding:18px 18px 16px;min-height:178px}
 .grade:hover{border-color:var(--gc);box-shadow:0 2px 0 var(--gc)}
 .grade .gn{font-size:2.3rem;font-weight:700;line-height:1.1;color:var(--gc)}
@@ -251,9 +251,9 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .grade .gs{font-size:.84rem;color:var(--muted)}
 .grade .gp{margin-top:auto;font-size:.8rem;background:var(--bg);border-radius:6px;padding:4px 9px}
 .grade .gx{font-size:.75rem;color:var(--muted)}
-.g3{--gc:#2a9d84}.g4{--gc:#3d6fb6}.g5{--gc:#e0793f}.g6{--gc:#8a5fc4}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .g3{--gc:#4cc3a6}:root:not([data-theme="light"]) .g4{--gc:#7fa8e6}:root:not([data-theme="light"]) .g5{--gc:#f28a52}:root:not([data-theme="light"]) .g6{--gc:#b394e8}}
-:root[data-theme="dark"] .g3{--gc:#4cc3a6}:root[data-theme="dark"] .g4{--gc:#7fa8e6}:root[data-theme="dark"] .g5{--gc:#f28a52}:root[data-theme="dark"] .g6{--gc:#b394e8}
+.g1{--gc:#b8434f}.g2{--gc:#1c86a8}.g3{--gc:#2a9d84}.g4{--gc:#3d6fb6}.g5{--gc:#e0793f}.g6{--gc:#8a5fc4}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .g1{--gc:#ee7a86}:root:not([data-theme="light"]) .g2{--gc:#5cc3e0}:root:not([data-theme="light"]) .g3{--gc:#4cc3a6}:root:not([data-theme="light"]) .g4{--gc:#7fa8e6}:root:not([data-theme="light"]) .g5{--gc:#f28a52}:root:not([data-theme="light"]) .g6{--gc:#b394e8}}
+:root[data-theme="dark"] .g1{--gc:#ee7a86}:root[data-theme="dark"] .g2{--gc:#5cc3e0}:root[data-theme="dark"] .g3{--gc:#4cc3a6}:root[data-theme="dark"] .g4{--gc:#7fa8e6}:root[data-theme="dark"] .g5{--gc:#f28a52}:root[data-theme="dark"] .g6{--gc:#b394e8}
 .guidebtn{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:14px;background:var(--navy-soft);border:1px solid var(--line);border-radius:10px;padding:16px 18px;text-align:left}
 .guidebtn b{font-size:1.02rem;color:var(--navy)}
 .guidebtn span{color:var(--muted);font-size:.88rem}
@@ -289,7 +289,7 @@ body.onguide #navG{display:none}
 
 <div class="wrap">
   <header class="top noprint">
-    <div class="brand"><h1 id="bTitle">어선 기관 3·4·5·6급 CBT</h1><small id="bSub">해기사 정기시험 기출 문제풀이</small></div>
+    <div class="brand"><h1 id="bTitle">어선 기관 1~6급 CBT</h1><small id="bSub">해기사 정기시험 기출 문제풀이</small></div>
     <div class="chips" id="navBtns">
       <button class="btn" id="goMenu">급수 바꾸기</button>
       <span id="navG" style="display:contents">
@@ -691,12 +691,14 @@ svg:`<svg viewBox="0 0 400 170" role="img" aria-label="메거로 절연저항 �
 <script>
 /* ---------- 첫 화면 · 급수 선택 · 사용법 ---------- */
 const GRADES = {
+  '1': {g:'1', name:'1급기관사', sub:'해기사 어선 기관 1급', ls:'cbt1eng_v1', range:'2021 ~ 2025년 · 20회분', note:'문제별 해설 포함'},
+  '2': {g:'2', name:'2급기관사', sub:'해기사 어선 기관 2급', ls:'cbt2eng_v1', range:'2021 ~ 2025년 · 20회분', note:'문제별 해설 포함'},
   '3': {g:'3', name:'3급기관사', sub:'해기사 어선 기관 3급', ls:'cbt3eng_v1', range:'2022 ~ 2025년 · 16회분', note:'문제별 해설 포함'},
   '4': {g:'4', name:'4급기관사', sub:'해기사 어선 기관 4급', ls:'cbt4eng_v1', range:'2020 ~ 2025년 · 23회분', note:'문제별 해설 포함'},
   '5': {g:'5', name:'5급기관사', sub:'해기사 어선 기관 5급', ls:'cbt5eng_v1', range:'2021 ~ 2025년 · 20회분', note:'문제별 해설 포함'},
   '6': {g:'6', name:'6급기관사', sub:'해기사 어선 기관 6급', ls:'cbt6eng_v1', range:'2021 ~ 2025년 · 20회분', note:'문제별 해설 포함', subs:['기관1','기관2','기관3','직무일반']},
 };
-const TITLE = '어선 기관 3·4·5·6급 CBT';
+const TITLE = '어선 기관 1~6급 CBT';
 function gradeStat(g){
   try{ const s=JSON.parse(localStorage.getItem(GRADES[g].ls)); const n=(s&&s.hist||[]).length;
     if(!n) return '아직 푼 기록 없음';
@@ -711,11 +713,11 @@ function showMenu(){
   document.getElementById('app').innerHTML=`
   <section class="menu">
     <div class="hero">
-      <h2>어선 기관 3·4·5·6급<br>CBT 대응 문제풀이</h2>
+      <h2>어선 기관 1~6급<br>CBT 대응 문제풀이</h2>
       <p>공부할 급수를 고르세요. 연도·회차를 골라 실제 시험처럼 풀 수 있습니다.</p>
     </div>
     <div class="gradegrid">
-      ${['3','4','5','6'].map(g=>{ const G=GRADES[g]; return `
+      ${['1','2','3','4','5','6'].map(g=>{ const G=GRADES[g]; return `
       <button class="grade g${g}" data-g="${g}"><span class="gn">${g}급</span><span class="gt">${g}급 기관사</span>
         <span class="gs">${G.range}</span><span class="gx">${G.note}</span><span class="gp">${gradeStat(g)}</span></button>`; }).join('')}
     </div>
@@ -747,7 +749,7 @@ function showGuide(){
 
     <div class="step"><div class="num">1</div><div>
       <h3>급수 고르기</h3>
-      <p>첫 화면에서 공부할 급수(3급·4급·5급·6급) 칸을 누르세요.</p>
+      <p>첫 화면에서 공부할 급수(1급~6급) 칸을 누르세요.</p>
       <p>다른 급수로 바꾸고 싶으면 위쪽 ${B('급수 바꾸기')} 버튼을 누르면 첫 화면으로 돌아옵니다. 푼 기록은 급수마다 따로 저장됩니다.</p>
     </div></div>
 
@@ -756,7 +758,7 @@ function showGuide(){
       <ul>
         <li><b>연도</b>를 누르면 그해 회차들이 나옵니다.</li>
         <li><b>회차</b>는 여러 개를 함께 고를 수 있습니다. ${B('전체')}를 누르면 그해 모든 회차.</li>
-        <li><b>과목</b>은 기관1·기관2·기관3·직무일반(3·4·5급은 영어 포함) 중 원하는 것만 골라도 되고, ${B('전과목')}을 누르면 모든 과목 (3·4·5급 125문제, 6급 100문제).</li>
+        <li><b>과목</b>은 기관1·기관2·기관3·직무일반(6급을 뺀 나머지 급수는 영어 포함) 중 원하는 것만 골라도 되고, ${B('전과목')}을 누르면 모든 과목 (1~5급 125문제, 6급 100문제).</li>
       </ul>
       <p>연도·회차 옆의 작은 표시(예: ✓ 72점)는 이미 풀어 본 회차와 그 점수입니다.</p>
     </div></div>
@@ -840,7 +842,7 @@ function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createE
   const G=window.CBT_G=GRADES[g];
   setHead(G.name+' 기출 CBT', G.sub); document.title=G.name+' 기출 CBT';
   document.getElementById('app').innerHTML='<section class="panel"><p>문제 불러오는 중…</p></section>';
-  loadScript('data'+g+'.js?v=5').then(()=>loadScript('app.js?v=5')).catch(()=>{
+  loadScript('data'+g+'.js?v=6').then(()=>loadScript('app.js?v=6')).catch(()=>{
     document.getElementById('app').innerHTML='<section class="panel"><p>문제를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 해 주세요.</p><button class="btn" onclick="location.reload()">새로고침</button></section>';
   });
 })();

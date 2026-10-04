@@ -246,7 +246,7 @@ function renderQ(){
   updTimer();
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
     if(ex.done || (ex.mode==='practice' && ex.checked[q.id])) return;
-    ex.ans[q.id]=+b.dataset.i;
+    ex.ans[q.id]=+b.dataset.i; if(q.alt && q.alt.includes(ex.ans[q.id])) ex.ans[q.id]=q.a;
     if(ex.mode==='practice'){ ex.checked[q.id]=true; recordOne(q); }
     renderQ();
   });
@@ -528,7 +528,7 @@ function cardRender(){
       ${explHTML(q)}
       <textarea class="memo" data-memo="${esc(id)}" placeholder="메모 (외울 포인트)" style="margin-top:12px">${esc(store.memo[id]||'')}</textarea>` : ''}
   </section>`;
-  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ if(cs.shown) return; cs.pick=+b.dataset.i; cs.shown=true; cardRender(); scrollRate(); });
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ if(cs.shown) return; cs.pick=+b.dataset.i; { const qq=BYID[cs.queue[0]]; if(qq && qq.alt && qq.alt.includes(cs.pick)) cs.pick=qq.a; } cs.shown=true; cardRender(); scrollRate(); });
   const rv=document.getElementById('cReveal'); if(rv) rv.onclick=()=>{ cs.pick=null; cs.shown=true; cardRender(); scrollRate(); };
   app.querySelectorAll('.rbtn').forEach(b=>b.onclick=()=>cardRate(b.dataset.r));
   app.querySelectorAll('[data-memo]').forEach(t=>t.oninput=()=>{store.memo[t.dataset.memo]=t.value; save();});
