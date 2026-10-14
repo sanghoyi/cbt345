@@ -286,6 +286,16 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 @media (max-width:640px){.gradegrid{grid-template-columns:1fr}.grade{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:baseline;column-gap:10px}.grade .gp{margin-top:6px;width:100%}.hero h2{font-size:1.25rem}}
 body.onmenu #navBtns{display:none}
 body.onguide #navG{display:none}
+.hero.center{text-align:center}
+.catgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.catbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;background:var(--paper);border:1px solid var(--line);border-top:6px solid var(--cc,var(--navy));border-radius:10px;padding:18px}
+.catbtn b{font-size:1.25rem;color:var(--cc,var(--navy))}
+.catbtn span{font-size:.84rem;color:var(--muted)}
+.catbtn:hover{border-color:var(--cc,var(--navy))}
+.c-sh{--cc:#1f5fa8}.c-eh{--cc:#0e8a8a}.c-sg{--cc:#6a4fb0}.c-eg{--cc:#e0793f}.c-sm{--cc:#2a9d84}
+.homebtn{margin-top:18px}
+.soon{text-align:center;color:var(--muted)}
+@media (max-width:640px){.catgrid{grid-template-columns:1fr}.catbtn{min-height:84px}}
 </style>
 
 <div class="wrap">
@@ -722,47 +732,61 @@ function gradeStat(g){
 }
 function setHead(t, sub){ document.getElementById('bTitle').textContent=t; document.getElementById('bSub').textContent=sub; }
 
-function showMenu(){
-  document.body.classList.add('onmenu');
-  setHead(TITLE, '해기사 정기시험 기출 문제풀이'); document.title=TITLE;
-  document.getElementById('app').innerHTML=`
-  <section class="menu">
-    <div class="hero">
-      <h2>해기사 정기시험<br>CBT 대응 문제풀이</h2>
-      <p>공부할 급수를 고르세요. 연도·회차를 골라 실제 시험처럼 풀 수 있습니다.</p>
-    </div>
-    <div class="gsec">어선 기관사 1~6급</div>
-    <div class="gradegrid">
-      ${['1','2','3','4','5','6'].map(g=>{ const G=GRADES[g]; return `
-      <button class="grade g${g}" data-g="${g}"><span class="gn">${g}급</span><span class="gt">${g}급 기관사</span>
-        <span class="gs">${G.range}</span><span class="gx">${G.note}</span><span class="gp">${gradeStat(g)}</span></button>`; }).join('')}
-    </div>
-    <div class="gsec">항해사 · 상선</div>
-    <div class="gradegrid">
-      ${['7','9','11','13','15','17','19'].map(g=>{ const G=GRADES[g]; return `
-      <button class="grade g${g}" data-g="${g}"><span class="gn">${G.gn}</span><span class="gt">${G.gt}</span>
-        <span class="gs">${G.range}</span><span class="gx">${G.note}</span><span class="gp">${gradeStat(g)}</span></button>`; }).join('')}
-    </div>
-    <div class="gsec">항해사 · 어선</div>
-    <div class="gradegrid">
-      ${['8','10','12','14','16','18','20'].map(g=>{ const G=GRADES[g]; return `
-      <button class="grade g${g}" data-g="${g}"><span class="gn">${G.gn}</span><span class="gt">${G.gt}</span>
-        <span class="gs">${G.range}</span><span class="gx">${G.note}</span><span class="gp">${gradeStat(g)}</span></button>`; }).join('')}
-    </div>
-    <button class="guidebtn" id="goGuide"><div><b>처음이신가요? 사용법 안내</b><br><span>문제 고르기부터 채점, 오답노트, 휴대폰 설치까지 차근차근 알려드립니다.</span></div><i>→</i></button>
+const CATS = {
+  sh:{name:'상선 · 항해사', title:'상선 항해사 1~6급', gs:['7','9','11','13','15','17','19']},
+  eh:{name:'어선 · 항해사', title:'어선 항해사 1~6급', gs:['8','10','12','14','16','18','20']},
+  sg:{name:'상선 · 기관사', title:'상선 기관사 1~6급', gs:[], soon:'상선 기관사 문제는 준비 중입니다.'},
+  eg:{name:'어선 · 기관사', title:'어선 기관 1~6급', gs:['1','2','3','4','5','6']},
+  sm:{name:'소형선박', title:'소형선박', gs:[], soon:'소형선박은 급수 없이 연도별로 골라 시험을 보는 방식으로 만들 예정이며, 현재는 준비 중입니다.'}
+};
+function catOf(g){ g=+g; return g<=6?'eg':(g%2?'sh':'eh'); }
+const NOTICE = `
     <div class="notice">
       <p>본 프로그램에 수록된 문제는 한국해양수산연수원이 공개한 해기사 정기시험 기출문제입니다.<br>
       문제의 저작권은 한국해양수산연수원에 있으며, 본 프로그램 제작자에게는 저작권이 없습니다.</p>
+      <p>각 문제에 대한 해설 및 의견은 제작자가 국내외 자료를 확인하여 해설을 첨부하였으나, 모든 기준은 문제에 대한 답변을 도출하기 위한 것으로 참고 또는 문제 풀이의 힌트로만 인지하여 주시고 실제 문제풀이에 대한 기술적 문의 사항은 메일로 문의 주시면 검토하여 수정 업데이트 할 수 있도록 하겠습니다.</p>
       <ul>
         <li>출처: 한국해양수산연수원 홈페이지 › 해기사 정기시험 기출문제</li>
         <li>본 프로그램은 <strong>개인 학습용(비영리)</strong>으로 제작되었습니다.</li>
         <li>판매 등 영리 목적의 사용과 무단 복제·배포를 금지합니다.</li>
       </ul>
       <p style="margin:0">개선 및 기타 문의 : <a href="mailto:kortino@gmail.com">kortino@gmail.com</a></p>
+    </div>`;
+
+function showMenu(){
+  document.body.classList.add('onmenu');
+  setHead(TITLE, '해기사 정기시험 기출 문제풀이'); document.title=TITLE;
+  document.getElementById('app').innerHTML=`
+  <section class="menu">
+    <div class="hero center"><h2>해기사 기출문제</h2><p>공부할 과목을 고르세요.</p></div>
+    <div class="catgrid">
+      ${Object.keys(CATS).map(c=>`<button class="catbtn c-${c}" data-c="${c}"><b>${CATS[c].name}</b><span>${CATS[c].gs.length?(c==='eg'?'1~6급':'1~6급'):'준비 중'}</span></button>`).join('')}
     </div>
+    <button class="guidebtn" id="goGuide"><div><b>처음이신가요? 사용법 안내</b><br><span>문제 고르기부터 채점, 오답노트, 휴대폰 설치까지 차근차근 알려드립니다.</span></div><i>→</i></button>
+    ${NOTICE}
+  </section>`;
+  document.querySelectorAll('.catbtn').forEach(b=>b.onclick=()=>{ location.href='?cat='+b.dataset.c; });
+  document.getElementById('goGuide').onclick=()=>{ location.href='?page=guide'; };
+  window.scrollTo(0,0);
+}
+
+function showCat(c){
+  const C=CATS[c]; document.body.classList.add('onmenu');
+  setHead(TITLE, C.name); document.title=C.name+' · '+TITLE;
+  const body = C.gs.length ? `<div class="gradegrid">${C.gs.map(g=>{ const G=GRADES[g]; const gn=G.gn||(g+'급'), gt=G.gt||(g+'급 기관사');
+      return `<button class="grade g${g}" data-g="${g}"><span class="gn">${gn}</span><span class="gt">${gt}</span>
+        <span class="gs">${G.range}</span><span class="gx">${G.note}</span><span class="gp">${gradeStat(g)}</span></button>`; }).join('')}</div>`
+    : `<div class="panel soon"><p>${C.soon}</p></div>`;
+  document.getElementById('app').innerHTML=`
+  <section class="menu">
+    <div class="hero center"><h2>${C.title}<br>CBT 대응 문제풀이</h2>
+      <p>${C.gs.length?'공부할 급수를 고르세요. 연도·회차를 골라 실제 시험처럼 풀 수 있습니다.':''}</p></div>
+    ${body}
+    <button class="btn homebtn" id="goHome">← 처음으로</button>
+    ${NOTICE}
   </section>`;
   document.querySelectorAll('.grade').forEach(b=>b.onclick=()=>{ location.href='?g='+b.dataset.g; });
-  document.getElementById('goGuide').onclick=()=>{ location.href='?page=guide'; };
+  document.getElementById('goHome').onclick=()=>{ location.href='./'; };
   window.scrollTo(0,0);
 }
 
@@ -862,9 +886,11 @@ function showGuide(){
 
 function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.body.appendChild(s); }); }
 (function start(){
-  document.getElementById('goMenu').onclick=()=>{ location.href='./'; };
   const P=new URLSearchParams(location.search);
+  const g0=P.get('g');
+  document.getElementById('goMenu').onclick=()=>{ location.href=(g0&&GRADES[g0])?('?cat='+catOf(g0)):'./'; };
   if(P.get('page')==='guide') return showGuide();
+  if(P.get('cat')&&CATS[P.get('cat')]) return showCat(P.get('cat'));
   const g=P.get('g');
   if(!GRADES[g]) return showMenu();
   const G=window.CBT_G=GRADES[g];
