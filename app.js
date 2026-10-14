@@ -15,7 +15,7 @@ function explHTML(q){
   let h = `<div class="expl"><div class="exh">해설 <span class="ans">정답 ${MKC[q.a]}${ansTxt}</span></div>`;
   h += `<p class="exw">${nl(e.w)}</p>`;
   (Array.isArray(e.f)?e.f:(e.f?[e.f]:[])).forEach(k=>{ const F=FIGS[k]; if(F) h+=`<figure class="exfig">${F.svg}<figcaption>${esc(F.cap)}</figcaption></figure>`; });
-  if(e.x) h += `<ul class="exo">${e.x.map((t,i)=>`<li class="${i===q.a?'ok':''}"><b>${MKC[i]}</b><span>${nl(t)}</span></li>`).join('')}</ul>`;
+  if(e.x) h += `<ul class="exo">${(q.perm&&q.perm.length===e.x.length?q.perm.map(k=>e.x[k]):e.x).map((t,i)=>`<li class="${i===q.a?'ok':''}"><b>${MKC[i]}</b><span>${nl(t)}</span></li>`).join('')}</ul>`;
   if(e.t) h += `<div class="extip"><b>암기</b> ${nl(e.t)}</div>`;
   if(e.c) h += `<div class="exchk">⚠ ${nl(e.c)}</div>`;
   return h + '</div>';
@@ -125,6 +125,12 @@ function home(){
         : `<p class="small">아직 기록이 없습니다. 왼쪽에서 회차와 과목을 고르고 시작하세요. 틀린 문제는 자동으로 오답노트에 쌓입니다.</p>`}
     </aside>
   </div>`;
+  const rr=loadRun();
+  if(rr){ app.insertAdjacentHTML('afterbegin', `<div class="panel" id="runbar" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-left:6px solid var(--warn,#e0793f)">
+      <div style="flex:1;min-width:200px"><b>풀던 시험이 있습니다</b><br><span class="small">${runInfo(rr)}</span></div>
+      <button class="btn primary" id="runGo">이어서 풀기</button><button class="btn" id="runDel">초기화</button></div>`);
+    document.getElementById('runGo').onclick=()=>resumeRun(rr);
+    document.getElementById('runDel').onclick=()=>{ if(confirm('풀던 기록을 지우고 처음부터 할까요?')){ clearRun(); home(); } }; }
   const cnt = () => { document.getElementById('cnt').textContent = `${pool().length}문항`; };
   cnt();
   app.querySelectorAll('.pc[data-py]').forEach(c=>c.onclick=()=>{ sel.y=c.dataset.py; sel.s=new Set([+c.dataset.ps]); sel.sub=new Set(SUBS); home(); window.scrollTo({top:0,behavior:'smooth'}); });
@@ -162,11 +168,11 @@ function home(){
   };
   document.getElementById('retry').onclick=()=>{
     const list = Object.keys(store.wrong).map(id=>BYID[id]).filter(Boolean);
-    startExam(list, '오답 다시 풀기', 'practice', true, 'wrong');
+    askShuf(list.length, o=>startExam(list, '오답 다시 풀기', 'practice', true, 'wrong', false, o));
   };
   document.getElementById('gretry').onclick=()=>{
     const list = Object.keys(store.guess).map(id=>BYID[id]).filter(Boolean);
-    startExam(list, '찍은 문제 다시 풀기', 'practice', true, 'guess');
+    askShuf(list.length, o=>startExam(list, '찍은 문제 다시 풀기', 'practice', true, 'guess', false, o));
   };
   document.getElementById('note2').onclick=note;
   document.getElementById('card2').onclick=cardHome;
@@ -174,10 +180,75 @@ function home(){
 
 /* ---------- EXAM ---------- */
 let ex = null, tick = null;
+/* ---------- 보기(답안) 섞기 ---------- */
+const XREF=/[①②③④㉮㉯㉰㉱]|[1-4]\s*번|위\s*(의|에)|(모두|전부)\s*(옳|맞|정답|해당|틀|아니)|둘\s*다|없음|해당\s*없|모두\s*$/;
+function canShufOpts(q){ return !q.full && !q.pua && q.o.length>=2 && q.o.every(o=>o && String(o).trim()) && !q.o.some(o=>XREF.test(o)); }
+function applyPerm(q, perm){
+  return Object.assign({}, q, { o:perm.map(i=>q.o[i]), a:perm.indexOf(q.a), alt:q.alt?q.alt.map(x=>perm.indexOf(x)):q.alt, perm:perm });
+}
+function shufOpts(q){
+  if(!canShufOpts(q)) return q;
+  let perm; let t=0;
+  do { perm=shuffleArr(q.o.map((_,i)=>i)); t++; } while(perm.every((v,i)=>v===i) && t<10);
+  return applyPerm(q, perm);
+}
+function askShuf(count, go){
+  const box=document.createElement('div');
+  box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  box.innerHTML=`<div style="background:var(--paper,#fff);color:var(--ink,#222);max-width:420px;width:100%;border-radius:12px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.4)">
+    <h3 style="margin:0 0 8px">답안을 섞어서 푸시겠습니까?</h3>
+    <p style="margin:0 0 14px;line-height:1.6">${count}문제의 보기 순서(①②③④)를 섞으면 정답 위치를 외워서 맞히는 것을 막을 수 있습니다. 그림이나 "위의 모두" 같은 보기가 있는 문제는 그대로 나옵니다.</p>
+    <div class="chips" style="gap:8px;flex-wrap:wrap"><button class="btn primary" id="sh1">섞어서 풀기</button><button class="btn" id="sh2">그대로 풀기</button><button class="btn" id="sh3">취소</button></div></div>`;
+  document.body.appendChild(box);
+  box.querySelector('#sh1').onclick=()=>{ box.remove(); go(true); };
+  box.querySelector('#sh2').onclick=()=>{ box.remove(); go(false); };
+  box.querySelector('#sh3').onclick=()=>box.remove();
+}
 function shuffleArr(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
-function startExam(list, title, mode, shuffle, isRetry){
+/* ---------- 풀던 시험 자동 저장 / 이어 풀기 ---------- */
+const RUNKEY = LS + '_run';
+function loadRun(){
+  try{ const r=JSON.parse(localStorage.getItem(RUNKEY)); if(!r||!Array.isArray(r.ids)) return null;
+    const P=r.perms||{}; const list=r.ids.map(id=>BYID[id]).filter(Boolean).map(q=>P[q.id]&&P[q.id].length===q.o.length?applyPerm(q,P[q.id]):q); if(!list.length) return null; r.list=list; return r; }catch(e){ return null; }
+}
+function saveRun(){
+  if(!ex || ex.done) return;
+  if(!Object.keys(ex.ans).length && !Object.keys(ex.skip).length && !Object.keys(ex.guess).length && !ex.cur) return;
+  try{ localStorage.setItem(RUNKEY, JSON.stringify({ ids:ex.list.map(q=>q.id), perms:ex.list.reduce((o,q)=>{ if(q.perm) o[q.id]=q.perm; return o; },{}), title:ex.title, mode:ex.mode, isRetry:ex.isRetry, kind:ex.kind,
+    ans:ex.ans, guess:ex.guess, gAdded:ex.gAdded, skip:ex.skip, checked:ex.checked, cur:ex.cur,
+    remain: ex.end ? Math.max(0, ex.end-Date.now()) : null, t:Date.now() })); }catch(e){}
+}
+function clearRun(){ try{ localStorage.removeItem(RUNKEY); }catch(e){} }
+function resumeRun(r){
+  ex = { list:r.list, title:r.title, mode:r.mode, isRetry:!!r.isRetry, kind:r.kind||null, ans:r.ans||{}, guess:r.guess||{}, gAdded:r.gAdded||{},
+         skip:r.skip||{}, cur:Math.min(r.cur||0, r.list.length-1), done:false, checked:r.checked||{},
+         end: r.mode==='exam' ? Date.now()+(r.remain==null ? r.list.length*60000 : r.remain) : null };
+  clearInterval(tick);
+  if(ex.end) tick=setInterval(updTimer,1000);
+  renderQ(); window.scrollTo(0,0);
+}
+function runInfo(r){ const n=Object.keys(r.ans||{}).length+Object.keys(r.skip||{}).filter(k=>!(r.ans||{})[k]).length;
+  return `${esc(r.title)} · ${r.list.length}문항 중 ${n}문항 풀이`; }
+function askRun(r, onNew){
+  const box=document.createElement('div');
+  box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  box.innerHTML=`<div style="background:var(--paper,#fff);color:var(--ink,#222);max-width:420px;width:100%;border-radius:12px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.4)">
+    <h3 style="margin:0 0 8px">풀던 시험이 있습니다</h3>
+    <p style="margin:0 0 14px;line-height:1.6">${runInfo(r)}<br>이어서 풀까요, 아니면 처음부터 다시 풀까요?</p>
+    <div class="chips" style="gap:8px;flex-wrap:wrap"><button class="btn primary" id="rr1">이어서 풀기</button><button class="btn warn" id="rr2">초기화하고 새로 시작</button><button class="btn" id="rr3">취소</button></div></div>`;
+  document.body.appendChild(box);
+  const close=()=>box.remove();
+  box.querySelector('#rr1').onclick=()=>{ close(); resumeRun(r); };
+  box.querySelector('#rr2').onclick=()=>{ close(); clearRun(); onNew(); };
+  box.querySelector('#rr3').onclick=close;
+}
+window.addEventListener('pagehide', saveRun);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveRun(); });
+function startExam(list, title, mode, shuffle, isRetry, force, optShuf){
   if(!list.length) return;
+  if(!force){ const r=loadRun(); if(r){ return askRun(r, ()=>startExam(list,title,mode,shuffle,isRetry,true,optShuf)); } }
   if(shuffle) list = shuffleArr(list);
+  if(optShuf) list = list.map(shufOpts);
   ex = { list, title, mode, isRetry:!!isRetry, kind:(isRetry===true?'wrong':(isRetry||null)), ans:{}, guess:{}, gAdded:{}, skip:{}, cur:0, done:false, checked:{},
          end: mode==='exam' ? Date.now()+list.length*60*1000 : null };
   clearInterval(tick);
@@ -188,6 +259,7 @@ function startExam(list, title, mode, shuffle, isRetry){
 function updTimer(){
   const el=document.getElementById('timer'); if(!el||!ex||ex.done) return;
   const left=Math.max(0,Math.round((ex.end-Date.now())/1000));
+  if(left%10===0) saveRun();
   el.textContent=`남은 시간 ${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;
   el.classList.toggle('low',left<300);
   if(left===0){ clearInterval(tick); finish(); }
@@ -205,6 +277,7 @@ function qBody(q, numLabel){
   return h;
 }
 function renderQ(){
+  saveRun();
   const q = ex.list[ex.cur], a = ex.ans[q.id];
   const showAns = ex.done || (ex.mode==='practice' && ex.checked[q.id]);
   const opts = q.o.map((_,i)=>{
@@ -296,7 +369,7 @@ function recordOne(q){
     if(ex.kind==='wrong' && store.wrong[q.id]) { delete store.wrong[q.id]; }
   } else {
     const w=store.wrong[q.id]||{c:0};
-    w.c++; w.last=a==null?null:a; w.t=Date.now();
+    w.c++; w.last=a==null?null:(q.perm?q.perm[a]:a); w.t=Date.now();
     store.wrong[q.id]=w;
     store.srs[q.id]={lvl:0,due:0,n:(store.srs[q.id]&&store.srs[q.id].n)||0};   // 다시 틀리면 암기 카드 처음부터
     if(store.guess[q.id]) delete store.guess[q.id];   // 틀리면 오답노트로 이동
@@ -317,6 +390,7 @@ function applyGuess(q){
 function finish(){
   clearInterval(tick);
   ex.done=true;
+  clearRun();
   ex.list.forEach(q=>{ if(!(ex.mode==='practice'&&ex.checked[q.id])) recordOne(q); });
   const r=calc();
   const d=new Date();
@@ -417,7 +491,7 @@ function note(){
   app.querySelectorAll('[data-memo]').forEach(t=>t.oninput=()=>{store.memo[t.dataset.memo]=t.value; save();});
   document.getElementById('nExpl').onclick=()=>{noteExpl=!noteExpl;note();};
   const pr=document.getElementById('print'); if(pr) pr.onclick=()=>window.print();
-  const rt=document.getElementById('nRetry'); if(rt) rt.onclick=()=>startExam(ids.map(i=>BYID[i]),G?'찍은 문제 다시 풀기':'오답 다시 풀기','practice',true,G?'guess':'wrong');
+  const rt=document.getElementById('nRetry'); if(rt) rt.onclick=()=>askShuf(ids.length, o=>startExam(ids.map(i=>BYID[i]),G?'찍은 문제 다시 풀기':'오답 다시 풀기','practice',true,G?'guess':'wrong',false,o));
   window.scrollTo(0,0);
 }
 
