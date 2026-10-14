@@ -1,7 +1,7 @@
 {
   "id": "./?app=cbt345",
-  "name": "어선 기관 1~6급 CBT",
-  "short_name": "기관사CBT",
+  "name": "해기사 기출 CBT",
+  "short_name": "해기사CBT",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
