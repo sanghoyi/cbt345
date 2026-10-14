@@ -784,11 +784,11 @@ function showCat(c){
     <div class="hero center"><h2>${C.title}<br>CBT 대응 문제풀이</h2>
       <p>${C.gs.length?'공부할 급수를 고르세요. 연도·회차를 골라 실제 시험처럼 풀 수 있습니다.':''}</p></div>
     ${body}
-    <button class="btn homebtn" id="goHome">← 처음으로</button>
+    <button class="btn homebtn" id="catHome">← 메인화면으로</button>
     ${NOTICE}
   </section>`;
   document.querySelectorAll('.grade').forEach(b=>b.onclick=()=>{ location.href='?g='+b.dataset.g; });
-  document.getElementById('goHome').onclick=()=>{ location.href='./'; };
+  document.getElementById('catHome').onclick=()=>{ location.href='./'; };
   window.scrollTo(0,0);
 }
 
@@ -898,6 +898,10 @@ function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createE
   const G=window.CBT_G=GRADES[g];
   setHead(G.name+' 기출 CBT', G.sub); document.title=G.name+' 기출 CBT';
   document.getElementById('app').innerHTML='<section class="panel"><p>문제 불러오는 중…</p></section>';
+  document.addEventListener('click',function(e){
+    const t=e.target.closest&&e.target.closest('#goHome');
+    if(t){ e.stopImmediatePropagation(); e.preventDefault(); location.href='?cat='+catOf(g); }
+  },true);
   loadScript('data'+g+'.js?v=6').then(()=>loadScript('app.js?v=6')).catch(()=>{
     document.getElementById('app').innerHTML='<section class="panel"><p>문제를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 해 주세요.</p><button class="btn" onclick="location.reload()">새로고침</button></section>';
   });
