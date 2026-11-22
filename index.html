@@ -902,7 +902,7 @@ function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createE
     const t=e.target.closest&&e.target.closest('#goHome');
     if(t){ e.stopImmediatePropagation(); e.preventDefault(); location.href='?cat='+catOf(g); }
   },true);
-  loadScript('data'+g+'.js?v=7').then(()=>loadScript('app.js?v=8')).catch(()=>{
+  loadScript('data'+g+'.js?v=7').then(()=>loadScript('app.js?v=9')).catch(()=>{
     document.getElementById('app').innerHTML='<section class="panel"><p>문제를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 해 주세요.</p><button class="btn" onclick="location.reload()">새로고침</button></section>';
   });
 })();

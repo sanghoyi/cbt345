@@ -1,4 +1,6 @@
 const G = window.CBT_G;
+const GN = G.name;
+const GTAG = `<span class="tag" style="font-weight:800">${GN}</span>`;
 const DATA = window.CBT_DATA;
 const SUBS = (G.subs || ['기관1','기관2','기관3','직무일반','영어']);
 const MK = ['가','나','사','아'];
@@ -292,7 +294,7 @@ function renderQ(){
   <div class="exam">
     <section class="panel">
       <div class="qhead">
-        <div class="chips"><span class="tag">${esc(q.y)} 제${q.s}회</span><span class="tag">${esc(q.sub)} ${q.n}번</span></div>
+        <div class="chips">${GTAG}<span class="tag">${esc(q.y)} 제${q.s}회</span><span class="tag">${esc(q.sub)} ${q.n}번</span></div>
         ${ex.end && !ex.done ? `<span class="timer" id="timer"></span>` : `<span class="small">${esc(ex.title)}</span>`}
       </div>
       ${qBody(q, (ex.cur+1)+'.')}
@@ -456,6 +458,7 @@ function note(){
   const d=new Date();
   app.innerHTML = `
   <section class="panel">
+    <h2 class="noprint" style="margin:0 0 12px;font-size:1.3rem">${GN} · ${G?'찍은 문제':'오답노트'} <small style="font-weight:500">(${window.CBT_G.sub})</small></h2>
     <div class="ntabs noprint">
       <button class="ntab" data-k="wrong" aria-pressed="${!G}">오답노트 (${Object.keys(store.wrong).filter(id=>BYID[id]).length})</button>
       <button class="ntab" data-k="guess" aria-pressed="${G}">찍은 문제 (${Object.keys(store.guess).filter(id=>BYID[id]).length})</button>
@@ -476,7 +479,7 @@ function note(){
     ${ids.length? ids.map((id,k)=>{
       const q=BYID[id], w=src[id];
       return `<div class="nitem">
-        <div class="nmeta"><span class="tag">${esc(q.y)} 제${q.s}회 ${esc(q.sub)} ${q.n}번</span>${G?`<span class="gtag">${w.c}회 찍어서 맞힘</span>`:`<span class="miss">${w.c}회 틀림</span>`}
+        <div class="nmeta">${GTAG}<span class="tag">${esc(q.y)} 제${q.s}회 ${esc(q.sub)} ${q.n}번</span>${G?`<span class="gtag">${w.c}회 찍어서 맞힘</span>`:`<span class="miss">${w.c}회 틀림</span>`}
           <button class="btn noprint" data-del="${id}" style="padding:2px 10px;font-size:.8rem">외웠음 · 삭제</button></div>
         ${qBody(q,(k+1)+'.')}
         <ul class="nopts">${q.o.map((_,i)=>`<li class="${i===q.a?'ans':(!G&&i===w.last?'mine':'')}">${MKC[i]} ${optText(q,i)}</li>`).join('')}</ul>
@@ -585,7 +588,7 @@ function cardRender(){
     <div class="cprog"><div class="cbar"><span style="width:${pct}%"></span></div>
       <span class="small">외움 <b>${cs.done.length}</b> / ${cs.total} · 남은 카드 ${cs.queue.length}</span></div>
     <div class="qhead">
-      <div class="chips"><span class="tag">${esc(q.y)} 제${q.s}회</span><span class="tag">${esc(q.sub)} ${q.n}번</span>
+      <div class="chips">${GTAG}<span class="tag">${esc(q.y)} 제${q.s}회</span><span class="tag">${esc(q.sub)} ${q.n}번</span>
         ${s.again?`<span class="tag tagbad">오늘 ${s.again}번 다시</span>`:''}${lv?`<span class="tag">${lv}단계</span>`:''}</div>
       <button class="btn small-btn" id="cQuit">그만하기</button>
     </div>
