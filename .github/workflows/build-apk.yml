@@ -1,0 +1,278 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index_eink.html'
+      - 'app.js'
+      - 'data*.js'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: 앱 뼈대와 파일 준비
+        run: |
+          set -e
+          mkdir -p android/app/src/main/java/com/skei/haegisa android/app/src/main/res/drawable android/app/src/main/assets/www
+          cat > android/settings.gradle <<'HAEGISA_EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "HaegisaCBT"
+          include ':app'
+          HAEGISA_EOF
+          cat > android/build.gradle <<'HAEGISA_EOF'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          HAEGISA_EOF
+          cat > android/gradle.properties <<'HAEGISA_EOF'
+          org.gradle.jvmargs=-Xmx3g
+          android.useAndroidX=true
+          HAEGISA_EOF
+          cat > android/app/build.gradle <<'HAEGISA_EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.skei.haegisa'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId 'com.skei.haegisa'
+                  minSdk 29
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0'
+              }
+
+              signingConfigs {
+                  debug {
+                      storeFile file('../keystore.jks')
+                      storePassword 'android'
+                      keyAlias 'haegisa'
+                      keyPassword 'android'
+                  }
+              }
+
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          HAEGISA_EOF
+          cat > android/app/src/main/AndroidManifest.xml <<'HAEGISA_EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="해기사 CBT"
+                  android:icon="@drawable/ic_launcher"
+                  android:allowBackup="true"
+                  android:usesCleartextTraffic="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|keyboard"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          HAEGISA_EOF
+          cat > android/app/src/main/java/com/skei/haegisa/MainActivity.java <<'HAEGISA_EOF'
+          package com.skei.haegisa;
+
+          import android.app.Activity;
+          import android.content.ContentValues;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.provider.MediaStore;
+          import android.util.Base64;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.ValueCallback;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.Toast;
+
+          import java.io.OutputStream;
+
+          public class MainActivity extends Activity {
+              private static final int REQ_FILE = 1;
+              private WebView web;
+              private ValueCallback<Uri[]> fileCallback;
+
+              // 페이지가 만든 백업 파일(blob)을 다운로드 폴더에 저장하기 위한 연결
+              private static final String PATCH_JS =
+                  "(function(){if(window.__patched)return;window.__patched=1;"
+                  + "var bm={};var oc=URL.createObjectURL;"
+                  + "URL.createObjectURL=function(b){var u=oc.call(URL,b);bm[u]=b;return u;};"
+                  + "var oclick=HTMLAnchorElement.prototype.click;"
+                  + "HTMLAnchorElement.prototype.click=function(){"
+                  + "if(this.download&&bm[this.href]){var n=this.download;var f=new FileReader();"
+                  + "f.onload=function(){Android.saveFile(n,String(f.result).split(',')[1]);};"
+                  + "f.readAsDataURL(bm[this.href]);return;}"
+                  + "return oclick.apply(this,arguments);};})();";
+
+              private class Bridge {
+                  @JavascriptInterface
+                  public void saveFile(final String name, final String base64) {
+                      runOnUiThread(new Runnable() {
+                          public void run() {
+                              try {
+                                  ContentValues v = new ContentValues();
+                                  v.put(MediaStore.Downloads.DISPLAY_NAME, name);
+                                  v.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+                                  v.put(MediaStore.Downloads.RELATIVE_PATH, "Download");
+                                  Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                                  OutputStream os = getContentResolver().openOutputStream(uri);
+                                  os.write(Base64.decode(base64, Base64.DEFAULT));
+                                  os.close();
+                                  Toast.makeText(MainActivity.this, "다운로드 폴더에 저장했습니다: " + name, Toast.LENGTH_LONG).show();
+                              } catch (Exception e) {
+                                  Toast.makeText(MainActivity.this, "저장 실패: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                              }
+                          }
+                      });
+                  }
+              }
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  web = new WebView(this);
+                  setContentView(web);
+
+                  WebSettings s = web.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setAllowFileAccess(true);
+                  s.setSupportZoom(false);
+                  s.setBuiltInZoomControls(false);
+                  s.setTextZoom(100);
+
+                  web.addJavascriptInterface(new Bridge(), "Android");
+                  web.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          view.evaluateJavascript(PATCH_JS, null);
+                      }
+                  });
+                  web.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> cb, FileChooserParams p) {
+                          if (fileCallback != null) fileCallback.onReceiveValue(null);
+                          fileCallback = cb;
+                          Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                          i.addCategory(Intent.CATEGORY_OPENABLE);
+                          i.setType("*/*");
+                          try {
+                              startActivityForResult(Intent.createChooser(i, "백업 파일 선택"), REQ_FILE);
+                          } catch (Exception e) {
+                              fileCallback = null;
+                              return false;
+                          }
+                          return true;
+                      }
+                  });
+
+                  if (savedInstanceState != null) {
+                      web.restoreState(savedInstanceState);
+                  } else {
+                      web.loadUrl("file:///android_asset/www/index.html");
+                  }
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  if (requestCode == REQ_FILE && fileCallback != null) {
+                      Uri[] result = null;
+                      if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                          result = new Uri[]{data.getData()};
+                      }
+                      fileCallback.onReceiveValue(result);
+                      fileCallback = null;
+                  }
+                  super.onActivityResult(requestCode, resultCode, data);
+              }
+
+              @Override
+              protected void onSaveInstanceState(Bundle outState) {
+                  super.onSaveInstanceState(outState);
+                  web.saveState(outState);
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (web.canGoBack()) web.goBack();
+                  else super.onBackPressed();
+              }
+          }
+          HAEGISA_EOF
+          echo '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' | base64 -d > android/keystore.jks
+          cp icon-192.png android/app/src/main/res/drawable/ic_launcher.png
+          cp index_eink.html android/app/src/main/assets/www/index.html
+          cp app.js android/app/src/main/assets/www/
+          cp data*.js android/app/src/main/assets/www/
+          du -sh android/app/src/main/assets/www
+
+      - name: APK 만들기
+        working-directory: android
+        run: gradle assembleDebug --no-daemon
+
+      - name: 이름 정리
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk HaegisaCBT.apk && ls -l HaegisaCBT.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HaegisaCBT-apk
+          path: HaegisaCBT.apk
+
+      - name: Releases에 올리기
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: 해기사 CBT 앱 (${{ github.run_number }}번째)
+          files: HaegisaCBT.apk
